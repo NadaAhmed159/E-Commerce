@@ -26,8 +26,8 @@ spring:
             enable: true
 
 jwt:
-  secret: your-very-long-secret-key-at-least-32-chars
-  expiration-ms: 7776000000
+  secret: E-commerceFreshCart-WebSite-SecretKey
+  expiration-ms: 600000 # 15 minutes
 
 eureka:
   client:

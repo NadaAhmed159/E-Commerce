@@ -8,6 +8,10 @@ import com.ecommerce.userservice.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+import com.ecommerce.userservice.exception.UnauthorizedException;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +43,7 @@ public class AuthService {
         return SignupSuccessResponse.builder()
                 .message("success")
                 .user(UserResponse.builder()
+                        .id(saved.getId())
                         .name(saved.getName())
                         .email(saved.getEmail())
                         .role(saved.getRole().name())
@@ -49,7 +54,7 @@ public class AuthService {
 
     // ── Signin ────────────────────────────────────────────────────────────────
 
-    public SignupSuccessResponse signin(SigninRequest request) {
+    public SigninSuccessResponse signin(SigninRequest request) {
 
         // 1. Look up user by email — same generic error to prevent user enumeration
         User user = userRepository.findByEmail(request.getEmail())
@@ -65,14 +70,49 @@ public class AuthService {
         // 3. Generate fresh JWT
         String token = jwtUtil.generateToken(user);
 
-        return SignupSuccessResponse.builder()
+
+        // Generate & persist refresh token 
+        String refreshToken = UUID.randomUUID().toString();
+        user.setRefreshToken(refreshToken);
+        user.setRefreshTokenExpiry(Instant.now().plus(7, ChronoUnit.DAYS)); // e.g. 7 days validity for refresh token
+        userRepository.save(user);
+
+        return SigninSuccessResponse.builder()
                 .message("success")
                 .user(UserResponse.builder()
+                        .id(user.getId())
                         .name(user.getName())
                         .email(user.getEmail())
                         .role(user.getRole().name())
                         .build())
                 .token(token)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
+    // ── Refresh Access Token ────────────────────────────────────────────────────────────────
+
+    public RefreshTokenResponse refreshAccessToken(String refreshToken) {
+
+        // 1. Look up the user by the refresh token value stored in DB
+        User user = userRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new UnauthorizedException("Invalid refresh token. Please login again."));
+
+        // 2. Check if the refresh token has expired
+        if (user.getRefreshTokenExpiry().isBefore(Instant.now())) {
+            // Wipe it so it can't be reused even after expiry
+            user.setRefreshToken(null);
+            user.setRefreshTokenExpiry(null);
+            userRepository.save(user);
+            throw new UnauthorizedException("Refresh token expired. Please login again.");
+        }
+
+        // 3. Everything is valid — issue a fresh access token
+        String newAccessToken = jwtUtil.generateToken(user);
+
+        return RefreshTokenResponse.builder()
+                .message("success")
+                .token(newAccessToken)
                 .build();
     }
 }

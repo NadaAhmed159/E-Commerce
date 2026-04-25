@@ -30,6 +30,9 @@ public class Product {
     private Double price;
     private Integer sold;
 
+    @Version
+    private Long version;
+
     @Column(name = "image_cover")
     private String imageCover;
 

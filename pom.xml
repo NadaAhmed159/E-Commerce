@@ -22,12 +22,11 @@
   </properties>
 
   <modules>
-    <module>eureka-server</module>
-    <module>api-gateway</module>
-    <module>user-service</module>
-    <module>product-service</module>
-    <module>order-service</module>
-    <module>payment-service</module>
+    <module>eurekaserver</module>
+    <module>apigateway</module>
+    <module>userservice</module>
+    <module>productservice</module>
+    <module>orderservice</module>
   </modules>
 
   <dependencyManagement>

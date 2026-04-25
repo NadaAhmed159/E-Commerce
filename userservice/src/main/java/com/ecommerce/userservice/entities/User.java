@@ -3,6 +3,7 @@ package com.ecommerce.userservice.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.time.Instant; 
 
 @Entity
 @Table(name = "users")
@@ -34,6 +35,11 @@ public class User {
     @Column(name = "token_version", nullable = false)
     @Builder.Default
     private int tokenVersion = 0;
+
+    @Column(unique = true)
+    private String refreshToken;
+
+    private Instant refreshTokenExpiry;
 
     // ── Password Reset ────────────────────────────────────────────────────────
 
@@ -67,5 +73,10 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 
-    public enum Role { user, admin }
+    public enum Role { 
+    guest, 
+    user, 
+    manager, 
+    admin 
+    }
 }

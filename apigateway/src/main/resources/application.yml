@@ -25,7 +25,15 @@ spring:
         - id: product-service
           uri: lb://product-service
           predicates:
-            - Path=/api/v1/products/**
+            - Path=/api/v1/products/**,/api/v1/admin/products/**
+          # NO StripPrefix — forward the full path as-is to the controller
+
+        # ── Order Service ────────────────────────────────────────────────────
+        # Controllers use: /api/v1/orders/** and /api/v1/admin/orders/**
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/v1/orders/**,/api/v1/admin/orders/**
           # NO StripPrefix — forward the full path as-is to the controller
 
       globalcors:

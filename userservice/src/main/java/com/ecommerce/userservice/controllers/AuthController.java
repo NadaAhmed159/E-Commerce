@@ -22,7 +22,7 @@ public class AuthController {
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<SignupSuccessResponse> signin(@Valid @RequestBody SigninRequest request) {
+    public ResponseEntity<SigninSuccessResponse> signin(@Valid @RequestBody SigninRequest request) {
         return ResponseEntity.ok(authService.signin(request));
     }
 
@@ -44,5 +44,12 @@ public class AuthController {
     public ResponseEntity<ResetPasswordResponse> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request) {
         return ResponseEntity.ok(passwordResetService.resetPassword(request));
+    }
+
+    // ── Token Refresh ────────────────────────────────────────────────────────
+    @PostMapping("/refresh")
+    public ResponseEntity<RefreshTokenResponse> refresh(
+            @RequestHeader("X-Refresh-Token") String refreshToken) {
+        return ResponseEntity.ok(authService.refreshAccessToken(refreshToken));
     }
 }

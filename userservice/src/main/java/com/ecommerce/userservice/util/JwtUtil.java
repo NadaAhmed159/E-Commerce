@@ -14,14 +14,14 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret}") //add this line to read secret from application.yml
     private String secret;
 
-    @Value("${jwt.expiration-ms}")
+    @Value("${jwt.expiration-ms}") //add this line to read expiration from application.yml
     private long expirationMs;
 
     private SecretKey getKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)); // secret is converted to bytes and then encoded to SecretKey 
     }
 
     public String generateToken(User user) {
@@ -58,10 +58,17 @@ public class JwtUtil {
         return extractAllClaims(token).get("tokenVersion", Integer.class); // ← new
     }
 
+    // public String extractTokenFromHeader(String tokenHeader) {
+    //     if (tokenHeader == null || tokenHeader.isBlank()) {
+    //         throw new UnauthorizedException("You are not logged in. Please login to get access");
+    //     }
+    //     return tokenHeader;
+    // }
+
     public String extractTokenFromHeader(String tokenHeader) {
-        if (tokenHeader == null || tokenHeader.isBlank()) {
-            throw new UnauthorizedException("You are not logged in. Please login to get access");
+        if (tokenHeader == null || !tokenHeader.startsWith("Bearer ")) {
+            throw new UnauthorizedException("Token is required. Please provide a valid token.");
         }
-        return tokenHeader;
+        return tokenHeader.substring(7);
     }
 }

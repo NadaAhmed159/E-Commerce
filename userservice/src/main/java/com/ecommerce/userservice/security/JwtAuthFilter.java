@@ -1,6 +1,7 @@
 package com.ecommerce.userservice.security;
 
 import com.ecommerce.userservice.entities.User;
+import com.ecommerce.userservice.exception.UnauthorizedException;
 import com.ecommerce.userservice.repos.UserRepository;
 import com.ecommerce.userservice.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,45 +36,52 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String tokenHeader = request.getHeader("token");
-
-        if (tokenHeader == null || tokenHeader.isBlank()) {
+        String path = request.getRequestURI();
+        if (path.startsWith("/api/v1/auth/")) {
             filterChain.doFilter(request, response);
             return;
         }
 
+        String tokenHeader = request.getHeader("Authorization");
+
+        if (tokenHeader == null || tokenHeader.isBlank()) {
+            writeErrorResponse(response,
+                "Token is required. Please provide a valid token.");
+            return;
+        }
+
         try {
-            Claims claims    = jwtUtil.extractAllClaims(tokenHeader);
-            Long userId      = claims.get("id", Long.class);
-            String role      = claims.get("role", String.class);
+            String token = jwtUtil.extractTokenFromHeader(tokenHeader);
+            Claims claims = jwtUtil.extractAllClaims(token);
+            Long userId = claims.get("id", Long.class);
             int tokenVersion = claims.get("tokenVersion", Integer.class);
 
             User user = userRepository.findById(userId).orElse(null);
 
-            // User not found in DB
             if (user == null) {
                 writeErrorResponse(response,
-                    "You are not logged in. Please login to get access");
+                    "User not found. Please login again.");
                 return;
             }
 
-            // Old token — password was changed after this token was issued
             if (user.getTokenVersion() != tokenVersion) {
                 writeErrorResponse(response,
                     "User recently changed password! Please login again.");
                 return;
             }
 
-            // Valid token — populate SecurityContext
+            List<SimpleGrantedAuthority> authorities = List.of(
+                new SimpleGrantedAuthority("ROLE_" + user.getRole().name().toUpperCase())
+            );
+
             UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(
-                    userId,
-                    null,
-                    List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
-                );
+                new UsernamePasswordAuthenticationToken(userId, null, authorities);
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
+        } catch (UnauthorizedException ex) {
+            writeErrorResponse(response, ex.getMessage());
+            return;
         } catch (Exception ex) {
             writeErrorResponse(response,
                 "You are not logged in. Please login to get access");
