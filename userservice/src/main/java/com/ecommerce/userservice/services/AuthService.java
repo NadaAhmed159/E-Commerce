@@ -39,6 +39,7 @@ public class AuthService {
 
         User saved = userRepository.save(user);
         String token = jwtUtil.generateToken(saved);
+        String refreshToken = UUID.randomUUID().toString();
 
         return SignupSuccessResponse.builder()
                 .message("success")
@@ -49,6 +50,7 @@ public class AuthService {
                         .role(saved.getRole().name())
                         .build())
                 .token(token)
+                .refreshToken(refreshToken)
                 .build();
     }
 

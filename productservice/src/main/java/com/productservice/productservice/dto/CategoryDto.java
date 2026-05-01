@@ -1,14 +1,17 @@
 package com.productservice.productservice.dto;
 
+import lombok.Data;
+import java.time.Instant;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import lombok.Data;
-
 @Data
-public class CategoryDto {
-     @JsonProperty("_id")   // ← add this
-    private String id; 
+public class CategoryDTO {
+    @JsonProperty("_id")
+    private String id;
     private String name;
     private String slug;
     private String image;
+    private Instant createdAt;
+    private Instant updatedAt;
 }

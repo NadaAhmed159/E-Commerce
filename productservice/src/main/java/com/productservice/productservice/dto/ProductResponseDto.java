@@ -1,11 +1,15 @@
 package com.productservice.productservice.dto;
 
 import lombok.Data;
-import java.time.LocalDateTime;
+
+import java.time.Instant;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Data
 public class ProductResponseDto {
+    @JsonProperty("_id")
     private String id;
     private String title;
     private String slug;
@@ -15,11 +19,11 @@ public class ProductResponseDto {
     private Integer sold;
     private String imageCover;
     private List<String> images;
-    private CategoryDto category;
-    private BrandDto brand;
-    private List<SubcategoryDto> subcategory;
+    private CategoryDTO category;
+    private BrandDTO brand;
+    private List<SubcategoryDTO> subcategory;
     private Double ratingsAverage;
     private Integer ratingsQuantity;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant  createdAt;
+    private Instant  updatedAt;
 }

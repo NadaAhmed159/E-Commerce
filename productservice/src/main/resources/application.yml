@@ -1,31 +1,19 @@
 server:
   port: 8082
-
 spring:
   application:
     name: product-service
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/ecommerce_products}
-    username: ${SPRING_DATASOURCE_USERNAME:root}
-    password: ${SPRING_DATASOURCE_PASSWORD:0000}
-
-
-  jpa:
-    hibernate:
-      ddl-auto: update    
-    show-sql: true
-    # properties:
-    #   hibernate:
-    #     dialect: org.hibernate.dialect.MySQLDialect
-    #     format_sql: true
-
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://localhost:27017/productservice}
+  web:
+    error:
+      include-message: always
+      include-stacktrace: on_param
+      include-binding-errors: always
 eureka:
   client:
-    enabled: true
     service-url:
-      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
-    fetch-registry: true
-    register-with-eureka: true
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
   instance:
     prefer-ip-address: true
 
@@ -36,4 +24,5 @@ management:
         include: health,info
 
 jwt:
-  secret: ${JWT_SECRET:E-commerceFreshCart-WebSite-SecretKey}
+  secret: your-super-secret-key-here-make-it-long-and-random
+  expiration: 86400000

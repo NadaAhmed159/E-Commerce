@@ -1,9 +1,10 @@
 package com.ecommerce.userservice.entities;
 
+import com.ecommerce.userservice.util.EncryptedAttributeConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
-import java.time.Instant; 
+import java.time.Instant;
 
 @Entity
 @Table(name = "users")
@@ -16,16 +17,18 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Convert(converter = EncryptedAttributeConverter.class)  // ← encrypted
+    @Column(nullable = false, length = 512)                  // ← increased for cipher text
     private String name;
 
     @Column(nullable = false, unique = true, length = 150)
-    private String email;
+    private String email;                                    // ← NOT encrypted (used for lookup)
 
     @Column(nullable = false)
-    private String password;
+    private String password;                                 // ← BCrypt hashed (not AES)
 
-    @Column(nullable = false, length = 20)
+    @Convert(converter = EncryptedAttributeConverter.class)  // ← encrypted
+    @Column(nullable = false, length = 512)                  // ← increased for cipher text
     private String phone;
 
     @Enumerated(EnumType.STRING)
@@ -37,9 +40,9 @@ public class User {
     private int tokenVersion = 0;
 
     @Column(unique = true)
-    private String refreshToken;
+    private String refreshToken;                             // ← your field kept
 
-    private Instant refreshTokenExpiry;
+    private Instant refreshTokenExpiry;                      // ← your field kept
 
     // ── Password Reset ────────────────────────────────────────────────────────
 
@@ -65,7 +68,7 @@ public class User {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (role == null) role = Role.user;
+        if (role == null) role = Role.user;  // ← your default kept
     }
 
     @PreUpdate
@@ -73,10 +76,10 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 
-    public enum Role { 
-    guest, 
-    user, 
-    manager, 
-    admin 
+    public enum Role {
+        guest,
+        user,       // ← your enum values kept
+        manager,
+        admin
     }
 }

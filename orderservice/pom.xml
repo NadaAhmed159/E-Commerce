@@ -16,7 +16,7 @@
 	<name>orderservice</name>
 
 	<properties>
-		<java.version>17</java.version>
+		<java.version>21</java.version>
 		<spring-cloud.version>2025.1.1</spring-cloud.version>      <!-- Compatible with Boot 4.0.x -->
 		<lombok.version>1.18.36</lombok.version>                    <!-- Latest stable -->
 		<jjwt.version>0.12.6</jjwt.version>                        <!-- Latest; use jjwt-gson, NOT jjwt-jackson -->

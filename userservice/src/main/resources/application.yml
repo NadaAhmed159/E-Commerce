@@ -27,8 +27,10 @@ spring:
 
 jwt:
   secret: E-commerceFreshCart-WebSite-SecretKey
-  expiration-ms: 600000 # 15 minutes
+  expiration-ms: 600000 # 10 minutes
 
+encryption:
+  secret-key: tmZkmZwPuBBaYn9wElpWl+/DPSiQGrgGyxgZtoqaujY=
 eureka:
   client:
     enabled: true

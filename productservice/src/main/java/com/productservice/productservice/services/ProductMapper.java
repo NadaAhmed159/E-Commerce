@@ -11,47 +11,54 @@ import java.util.stream.Collectors;
 public class ProductMapper {
 
     public ProductResponseDto toDto(Product p) {
-        ProductResponseDto dto = new ProductResponseDto();
-        dto.setId(p.getId());
-        dto.setTitle(p.getTitle());
-        dto.setSlug(p.getSlug());
-        dto.setDescription(p.getDescription());
-        dto.setQuantity(p.getQuantity());
-        dto.setPrice(p.getPrice());
-        dto.setSold(p.getSold());
-        dto.setImageCover(p.getImageCover());
-        dto.setImages(p.getImages());
-        dto.setRatingsAverage(p.getRatingsAverage());
-        dto.setRatingsQuantity(p.getRatingsQuantity());
-        dto.setCreatedAt(p.getCreatedAt());
-        dto.setUpdatedAt(p.getUpdatedAt());
+    ProductResponseDto dto = new ProductResponseDto();
+    dto.setId(p.getId());
+    dto.setTitle(p.getTitle());
+    dto.setSlug(p.getSlug());
+    dto.setDescription(p.getDescription());
+    dto.setQuantity(p.getQuantity());
+    dto.setPrice(p.getPrice());
+    dto.setSold(p.getSold());
+    dto.setImageCover(p.getImageCover());
+    dto.setImages(p.getImages());
+    dto.setRatingsAverage(p.getRatingsAverage());
+    dto.setRatingsQuantity(p.getRatingsQuantity());
+    dto.setCreatedAt(p.getCreatedAt());
+    dto.setUpdatedAt(p.getUpdatedAt());
 
-        CategoryDto cat = new CategoryDto();
-        cat.setId(p.getCategoryId());
-        cat.setName(p.getCategoryName());
-        cat.setSlug(p.getCategorySlug());
-        cat.setImage(p.getCategoryImage());
+    // ✅ Category — go through p.getCategory() first
+    if (p.getCategory() != null) {
+        CategoryDTO cat = new CategoryDTO();
+        cat.setId(p.getCategory().getId());
+        cat.setName(p.getCategory().getName());
+        cat.setSlug(p.getCategory().getSlug());
+        cat.setImage(p.getCategory().getImage());
         dto.setCategory(cat);
-
-        BrandDto brand = new BrandDto();
-        brand.setId(p.getBrandId());
-        brand.setName(p.getBrandName());
-        brand.setSlug(p.getBrandSlug());
-        brand.setImage(p.getBrandImage());
-        dto.setBrand(brand);
-
-        if (p.getSubcategories() != null) {
-            List<SubcategoryDto> subs = p.getSubcategories().stream().map(s -> {
-                SubcategoryDto sd = new SubcategoryDto();
-                sd.setId(s.getId());
-                sd.setName(s.getName());
-                sd.setSlug(s.getSlug());
-                sd.setCategory(s.getCategoryId());
-                return sd;
-            }).collect(Collectors.toList());
-            dto.setSubcategory(subs);
-        }
-
-        return dto;
     }
+
+    // ✅ Brand — go through p.getBrand() first
+    if (p.getBrand() != null) {
+        BrandDTO brand = new BrandDTO();
+        brand.setId(p.getBrand().getId());
+        brand.setName(p.getBrand().getName());
+        brand.setSlug(p.getBrand().getSlug());
+        brand.setImage(p.getBrand().getImage());
+        dto.setBrand(brand);
+    }
+
+    // ✅ Subcategories — iterate over p.getSubcategory()
+    if (p.getSubcategory() != null) {
+        List<SubcategoryDTO> subs = p.getSubcategory().stream().map(s -> {
+            SubcategoryDTO sd = new SubcategoryDTO();
+            sd.setId(s.getId());
+            sd.setName(s.getName());
+            sd.setSlug(s.getSlug());
+            sd.setCategory(s.getCategory()); // ✅ field name is 'category' in SubcategoryRef
+            return sd;
+        }).collect(Collectors.toList());
+        dto.setSubcategory(subs);
+    }
+
+    return dto;
+}
 }

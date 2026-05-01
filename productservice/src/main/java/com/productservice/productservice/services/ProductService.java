@@ -1,20 +1,14 @@
 package com.productservice.productservice.services;
 
-// src/main/java/com/ecommerce/product/service/ProductService.java
-
-
-import com.productservice.productservice.dto.AdminUpsertProductRequest;
-import com.productservice.productservice.dto.PageMetaDto;
-import com.productservice.productservice.dto.ProductListResponseDto;
-import com.productservice.productservice.dto.ProductResponseDto;
-import com.productservice.productservice.dto.ProductStockResponse;
+import com.productservice.productservice.dto.*;
 import com.productservice.productservice.entities.Product;
+import com.productservice.productservice.exception.ResourceNotFoundException;
 import com.productservice.productservice.repos.ProductRepository;
-
+import com.productservice.productservice.util.IdValidator;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,86 +18,94 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final ProductMapper productMapper;
 
-    public ProductListResponseDto getAllProducts(int page, int limit) {
-        // page param from API is 1-based
-        Pageable pageable = PageRequest.of(page - 1, limit, Sort.by("createdAt").descending());
-        Page<Product> productPage = productRepository.findAll(pageable);
+    public PagedResponseDTO<ProductDTO> getAllProducts(int page, int limit) {
+        PageRequest pageable = PageRequest.of(page - 1, limit);
+        Page<Product> result = productRepository.findAll(pageable);
 
-        List<ProductResponseDto> dtos = productPage.getContent()
-                .stream()
-                .map(productMapper::toDto)
-                .collect(Collectors.toList());
+        List<ProductDTO> data = result.getContent().stream()
+                .map(this::toDTO).collect(Collectors.toList());
 
-        PageMetaDto meta = new PageMetaDto();
-        meta.setCurrentPage(page);
-        meta.setLimit(limit);
-        meta.setNumberOfPages(productPage.getTotalPages());
-        meta.setNextPage(page < productPage.getTotalPages() ? page + 1 : null);
-
-        ProductListResponseDto response = new ProductListResponseDto();
-        response.setResults((int) productPage.getTotalElements());
-        response.setMetadata(meta);
-        response.setData(dtos);
-
-        return response;
+        int totalPages = result.getTotalPages();
+        Integer nextPage = page < totalPages ? page + 1 : null;
+        PagedResponseDTO.Metadata meta = new PagedResponseDTO.Metadata(page, totalPages, limit, nextPage);
+        return new PagedResponseDTO<>((int) result.getTotalElements(), meta, data);
     }
 
-    @Transactional(readOnly = true)
-    public Product getById(String id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+    public SingleResponseDTO<ProductDTO> getProductById(String id) {
+        IdValidator.validate(id, "id");
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
+        return new SingleResponseDTO<>(toDTO(product));
     }
 
-    @Transactional
-    public Product upsertAdmin(AdminUpsertProductRequest request) {
-        Product existing = productRepository.findById(request.id()).orElse(null);
-        Product product = existing == null ? new Product() : existing;
-        product.setId(request.id());
-        product.setTitle(request.title());
-        product.setSlug(request.slug());
-        product.setPrice(request.price());
-        product.setQuantity(request.quantity());
-        product.setDescription(request.description());
-        product.setImageCover(request.imageCover());
-        return productRepository.save(product);
-    }
+    private ProductDTO toDTO(Product p) {
+        ProductDTO dto = new ProductDTO();
+        dto.set_id(p.getId());
+        dto.setId(p.getId());
+        dto.setTitle(p.getTitle());
+        dto.setSlug(p.getSlug());
+        dto.setDescription(p.getDescription());
+        dto.setQuantity(p.getQuantity());
+        dto.setPrice(p.getPrice());
+        dto.setImageCover(p.getImageCover());
+        dto.setImages(p.getImages());
+        dto.setSold(p.getSold());
+        dto.setRatingsAverage(p.getRatingsAverage());
+        dto.setRatingsQuantity(p.getRatingsQuantity());
+        dto.setCreatedAt(p.getCreatedAt());
+        dto.setUpdatedAt(p.getUpdatedAt());
 
-    @Transactional
-    public void deleteAdmin(String id) {
-        productRepository.deleteById(id);
-    }
-
-    @Transactional(readOnly = true)
-    public ProductStockResponse getQuantityAndPrice(String productId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
-        return new ProductStockResponse(product.getId(), product.getQuantity(), product.getPrice());
-    }
-
-    @Transactional
-    public ProductStockResponse reserveStock(String productId, int qty) {
-        if (qty < 1) throw new IllegalArgumentException("Quantity must be >= 1");
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
-        int available = product.getQuantity() == null ? 0 : product.getQuantity();
-        if (available < qty) {
-            throw new IllegalArgumentException("Insufficient stock");
+        if (p.getCategory() != null) {
+            ProductDTO.CategoryRefDTO cat = new ProductDTO.CategoryRefDTO();
+            cat.set_id(p.getCategory().getId());
+            cat.setName(p.getCategory().getName());
+            cat.setSlug(p.getCategory().getSlug());
+            cat.setImage(p.getCategory().getImage());
+            dto.setCategory(cat);
         }
-        product.setQuantity(available - qty);
-        productRepository.save(product);
-        return new ProductStockResponse(product.getId(), product.getQuantity(), product.getPrice());
-    }
 
-    @Transactional
-    public ProductStockResponse releaseStock(String productId, int qty) {
-        if (qty < 1) throw new IllegalArgumentException("Quantity must be >= 1");
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
-        int available = product.getQuantity() == null ? 0 : product.getQuantity();
-        product.setQuantity(available + qty);
-        productRepository.save(product);
-        return new ProductStockResponse(product.getId(), product.getQuantity(), product.getPrice());
+        if (p.getBrand() != null) {
+            ProductDTO.BrandRefDTO brand = new ProductDTO.BrandRefDTO();
+            brand.set_id(p.getBrand().getId());
+            brand.setName(p.getBrand().getName());
+            brand.setSlug(p.getBrand().getSlug());
+            brand.setImage(p.getBrand().getImage());
+            dto.setBrand(brand);
+        }
+
+        if (p.getSubcategory() != null) {
+            List<ProductDTO.SubcategoryRefDTO> subcats = p.getSubcategory().stream().map(s -> {
+                ProductDTO.SubcategoryRefDTO sub = new ProductDTO.SubcategoryRefDTO();
+                sub.set_id(s.getId());
+                sub.setName(s.getName());
+                sub.setSlug(s.getSlug());
+                sub.setCategory(s.getCategory());
+                return sub;
+            }).collect(Collectors.toList());
+            dto.setSubcategory(subcats);
+        }
+
+        if (p.getReviews() != null) {
+            List<ProductDTO.ReviewDTO> reviews = p.getReviews().stream().map(r -> {
+                ProductDTO.ReviewDTO rev = new ProductDTO.ReviewDTO();
+                rev.set_id(r.getId());
+                rev.setReview(r.getReview());
+                rev.setRating(r.getRating());
+                rev.setProduct(r.getProduct());
+                rev.setCreatedAt(r.getCreatedAt());
+                rev.setUpdatedAt(r.getUpdatedAt());
+                if (r.getUser() != null) {
+                    ProductDTO.UserRefDTO user = new ProductDTO.UserRefDTO();
+                    user.set_id(r.getUser().getId());
+                    user.setName(r.getUser().getName());
+                    rev.setUser(user);
+                }
+                return rev;
+            }).collect(Collectors.toList());
+            dto.setReviews(reviews);
+        }
+
+        return dto;
     }
 }

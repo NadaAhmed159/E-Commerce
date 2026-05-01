@@ -34,7 +34,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         // Public read-only catalog endpoints
         String path = request.getRequestURI();
-        if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/v1/products")) {
+        if ("GET".equalsIgnoreCase(request.getMethod()) && path.startsWith("/api/v1")) {
             filterChain.doFilter(request, response);
             return;
         }
